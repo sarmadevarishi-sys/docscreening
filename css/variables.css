@@ -1,0 +1,83 @@
+:root {
+  /* Colors - Backgrounds & Surfaces */
+  --bg-deepest: #f5f5f7;
+  --bg-surface: rgba(255, 255, 255, 0.72);
+  --bg-elevated: rgba(255, 255, 255, 0.85);
+  --bg-card: rgba(255, 255, 255, 0.9);
+  --bg-panel: rgba(255, 255, 255, 0.95);
+  
+  /* Colors - Borders */
+  --border-subtle: rgba(0, 0, 0, 0.05);
+  --border-medium: rgba(0, 0, 0, 0.1);
+  --border-strong: rgba(0, 0, 0, 0.15);
+  --border-glow: rgba(0, 0, 0, 0.05);
+
+  /* Colors - Text */
+  --text-primary: #1d1d1f;
+  --text-secondary: #86868b;
+  --text-muted: #a1a1a6;
+  --text-inverse: #ffffff;
+
+  /* Colors - Accents (Apple Palette) */
+  --accent-cyan: #0066cc; 
+  --accent-cyan-dim: rgba(0, 102, 204, 0.1);
+  --accent-green: #34c759;
+  --accent-amber: #ff9f0a;
+  --accent-red: #ff3b30;
+  --accent-purple: #af52de;
+
+  /* Forensic Heat Scale */
+  --heat-1: #007aff;
+  --heat-2: #34c759;
+  --heat-3: #ffcc00;
+  --heat-4: #ff9500;
+  --heat-5: #ff3b30;
+  --heat-6: #ff2d55;
+
+  /* Typography */
+  --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-data: "SF Mono", "JetBrains Mono", Consolas, monospace;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Border Radius */
+  --radius-sm: 6px;
+  --radius-md: 10px; 
+  --radius-lg: 14px; 
+  --radius-xl: 18px; 
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.12);
+  --shadow-glow: 0 0 15px rgba(0, 102, 204, 0.15);
+  --shadow-glow-active: 0 0 20px rgba(0, 102, 204, 0.3);
+
+  /* Glass Filter */
+  --glass-filter: blur(20px) saturate(180%);
+
+  /* Z-Index */
+  --z-base: 1;
+  --z-elevated: 10;
+  --z-floating: 20;
+  --z-overlay: 100;
+  --z-modal: 1000;
+  --z-toast: 2000;
+
+  /* Transitions */
+  --transition-fast: 0.15s cubic-bezier(0.2, 0, 0, 1);
+  --transition-normal: 0.25s cubic-bezier(0.2, 0, 0, 1);
+  --transition-slow: 0.4s cubic-bezier(0.2, 0, 0, 1);
+  --transition-bounce: 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
