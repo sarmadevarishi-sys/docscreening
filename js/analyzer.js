@@ -11,9 +11,9 @@ window.SatyaKavach.MockAnalyzer = (function() {
   let _backendOnline = null; // null = unchecked, true/false = known
 
   async function checkBackend() {
-    if (_backendOnline !== null) return _backendOnline;
+    if (_backendOnline === true) return true;
     try {
-      const resp = await fetch(`${BACKEND_URL}/health`, { signal: AbortSignal.timeout(2000) });
+      const resp = await fetch(`${BACKEND_URL}/health`, { signal: AbortSignal.timeout(8000) });
       _backendOnline = resp.ok;
     } catch {
       _backendOnline = false;
@@ -21,18 +21,22 @@ window.SatyaKavach.MockAnalyzer = (function() {
     if (_backendOnline) {
       console.log('[SatyaKavach] ✅ Real AI backend is ONLINE — using real models.');
     } else {
-      console.warn('[SatyaKavach] ⚠️  Backend OFFLINE — using simulation. Start backend/start_server.bat to enable real AI.');
+      console.warn('[SatyaKavach] ⚠️ Backend ping timed out or offline. Will attempt direct analysis on upload.');
     }
-    // Re-check every 30s in case server starts later
-    setTimeout(() => { _backendOnline = null; }, 30000);
     return _backendOnline;
   }
 
   async function callBackendImage(file) {
     const form = new FormData();
     form.append('file', file);
-    const resp = await fetch(`${BACKEND_URL}/analyze/image`, { method: 'POST', body: form });
-    if (!resp.ok) throw new Error(`Backend error ${resp.status}`);
+    const resp = await fetch(`${BACKEND_URL}/analyze/image`, { 
+      method: 'POST', 
+      body: form 
+    });
+    if (!resp.ok) {
+      const errText = await resp.text().catch(() => '');
+      throw new Error(`Server returned status ${resp.status} (${resp.statusText || 'Error'}). ${errText.substring(0, 100)}`);
+    }
     return resp.json();
   }
 
@@ -123,34 +127,46 @@ window.SatyaKavach.MockAnalyzer = (function() {
     constructor() {}
 
     async analyzeImage(file, onProgress) {
-      if (onProgress) onProgress('Connecting to AI backend...', 5);
+      const isWebHosted = (window.location.protocol === 'http:' || window.location.protocol === 'https:');
+      if (onProgress) onProgress('Connecting to SatyaKavach AI engine...', 10);
+      
       const online = await checkBackend();
-      if (online) {
+      if (online || isWebHosted) {
         try {
-          if (onProgress) onProgress('Running HuggingFace deepfake model...', 30);
+          if (onProgress) onProgress('Screening document layout & structure (YOLOv8)...', 30);
           const backendData = await callBackendImage(file);
-          if (onProgress) onProgress('Mapping results...', 90);
+          if (onProgress) onProgress('Running OCR & validating government rules...', 80);
           await Utils.delay(300);
+          if (onProgress) onProgress('Finalizing forensic screening report...', 95);
+          await Utils.delay(200);
           if (onProgress) onProgress('Complete', 100);
           return backendResultToFullResult(backendData, file, 'image');
         } catch (e) {
-          console.warn('[SatyaKavach] Backend call failed, falling back to simulation:', e);
+          console.error('[SatyaKavach] Real AI backend call failed:', e);
+          if (isWebHosted) {
+            // Do NOT substitute fake simulated data on web hosting!
+            throw new Error(`AI Screening Service: ${e.message}. If the cloud server was sleeping (Render Free Tier spins down after inactivity), please wait 20-30 seconds for it to wake up and try again.`);
+          }
         }
       }
       return this._simulateAnalysis(file, 'image', onProgress);
     }
 
     async analyzeVideo(file, onProgress) {
-      if (onProgress) onProgress('Connecting to AI backend...', 5);
+      const isWebHosted = (window.location.protocol === 'http:' || window.location.protocol === 'https:');
+      if (onProgress) onProgress('Connecting to SatyaKavach AI engine...', 10);
       const online = await checkBackend();
-      if (online) {
+      if (online || isWebHosted) {
         try {
-          if (onProgress) onProgress('Running HuggingFace deepfake model on frame...', 30);
+          if (onProgress) onProgress('Screening video frames with neural model...', 40);
           const backendData = await callBackendImage(file);
           if (onProgress) onProgress('Complete', 100);
           return backendResultToFullResult(backendData, file, 'video');
         } catch (e) {
-          console.warn('[SatyaKavach] Backend call failed, falling back to simulation:', e);
+          console.error('[SatyaKavach] Real AI backend call failed:', e);
+          if (isWebHosted) {
+            throw new Error(`AI Screening Service: ${e.message}. Please wait a moment and try again.`);
+          }
         }
       }
       return this._simulateAnalysis(file, 'video', onProgress);

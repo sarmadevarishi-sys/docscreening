@@ -110,6 +110,7 @@ window.SatyaKavach.UploadManager = (function() {
         this.emit('analysis-complete', { result });
       } catch (err) {
         console.error("Analysis failed", err);
+        this.emit('analysis-error', { error: err });
       }
     }
 

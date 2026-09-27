@@ -135,6 +135,21 @@ window.SatyaKavach.App = (function () {
       hideProgressBar();
       renderAnalysisResults(data.result);
     });
+
+    uploadManager.on('analysis-error', (data) => {
+      state.isAnalyzing = false;
+      hideProgressBar();
+      if (els.dashboardContent) {
+        els.dashboardContent.innerHTML = `
+          <div style="text-align: center; padding: 48px 24px; background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 12px; margin: 20px 0;">
+            <div style="font-size: 36px; margin-bottom: 12px;">⚠️</div>
+            <h3 style="color: #ef4444; margin-bottom: 8px; font-size: 18px;">Analysis Interrupted</h3>
+            <p style="max-width: 520px; margin: 0 auto 20px auto; font-size: 14px; line-height: 1.6; color: var(--text-secondary);">${data.error?.message || 'Server encountered an error while processing the document.'}</p>
+            <button class="btn btn-primary" onclick="location.reload()" style="padding: 8px 20px; font-weight: 600;">↻ Retry Upload</button>
+          </div>
+        `;
+      }
+    });
   }
 
   // ─── Dashboard ─────────────────────────────────────────

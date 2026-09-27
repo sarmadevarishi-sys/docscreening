@@ -1,11 +1,30 @@
 """
 SatyaKavach — FastAPI Backend Server
 Provides real AI inference endpoints for the frontend website.
+Optimized for low-RAM cloud deployment (< 512MB RAM on Render Free Tier).
 Run with:  uvicorn main:app --reload --port 8000
 """
 import sys
 import os
+import gc
+
+# Enforce strict single-thread and memory limits for low-RAM cloud environments
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["MALLOC_TRIM_THRESHOLD_"] = "65536"
 sys.path.insert(0, os.path.dirname(__file__))
+
+try:
+    import torch
+    torch.set_num_threads(1)
+except Exception:
+    pass
+
+try:
+    import cv2
+    cv2.setNumThreads(1)
+except Exception:
+    pass
 
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,30 +34,16 @@ from contextlib import asynccontextmanager
 import threading
 
 def _warmup_models():
-    """Warm up all heavy neural networks during server launch."""
-    print("[Warmup] Pre-loading neural models into RAM in background...")
+    """Warm up lightweight document classifier during server launch without spiking RAM."""
+    print("[Warmup] Initializing primary document screener...")
     try:
         from models.image_model import _load_indian_id_validator
         _load_indian_id_validator()
         print("[Warmup] ✓ YOLO Layout Screener ready.")
     except Exception as e:
         print(f"[Warmup] YOLO preload warning: {e}")
-
-    try:
-        from models.ocr_extractor import get_ocr_engine
-        get_ocr_engine()
-        print("[Warmup] ✓ OCR Engine ready.")
-    except Exception as e:
-        print(f"[Warmup] OCR preload warning: {e}")
-
-    try:
-        from models.face_verifier import _get_models
-        _get_models()
-        print("[Warmup] ✓ Face Verification models ready.")
-    except Exception as e:
-        print(f"[Warmup] Face verifier preload warning: {e}")
-
-    print("[Warmup] All AI models pre-cached. Zero upload lag.")
+    gc.collect()
+    print("[Warmup] Core engine ready. Lazy loading active for OCR and biometric modules.")
 
 
 @asynccontextmanager
@@ -54,7 +59,7 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Allow the local HTML file to call this server
+# Allow the frontend to call this server from any domain
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -70,12 +75,11 @@ def health_check():
     return {"status": "ok", "server": "SatyaKavach API v1.0"}
 
 
-
 @app.post("/analyze/image")
 async def analyze_image(file: UploadFile = File(...)):
     """
     Analyze an uploaded Indian Identity Document:
-    YOLO Classification + EasyOCR/PaddleOCR + Govt Rule Validation + Tamper/Forgery Detection.
+    YOLO Classification + EasyOCR + Govt Rule Validation + Tamper/Forgery Detection.
     """
     try:
         file_bytes = await file.read()
@@ -83,7 +87,10 @@ async def analyze_image(file: UploadFile = File(...)):
         result = run_image(file_bytes)
         return JSONResponse(content=result)
     except Exception as e:
+        print(f"[Error] /analyze/image failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        gc.collect()
 
 
 @app.post("/verify/face")
@@ -99,7 +106,10 @@ async def verify_face(doc_file: UploadFile = File(...), live_file: UploadFile = 
         result = verify_1to1_face(doc_bytes, live_bytes)
         return JSONResponse(content=result)
     except Exception as e:
+        print(f"[Error] /verify/face failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        gc.collect()
 
 
 # ─── FRONTEND STATIC HOSTING ────────────────────────────────────────────────
@@ -126,5 +136,3 @@ for static_folder in ["css", "js", "assets"]:
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
-
-

@@ -49,8 +49,8 @@ def get_ocr_engine():
 
     try:
         import easyocr
-        print("[OCR] Initializing EasyOCR engine...")
-        _EASY_OCR = easyocr.Reader(['en'], gpu=False)
+        print("[OCR] Initializing EasyOCR engine (quantized for low RAM)...")
+        _EASY_OCR = easyocr.Reader(['en'], gpu=False, quantize=True)
         print("[OCR] EasyOCR engine ready.")
         return "easyocr", _EASY_OCR
     except Exception as e:
@@ -59,6 +59,7 @@ def get_ocr_engine():
     return None, None
 
 def run_ocr(pil_img: Image.Image):
+    import gc
     engine_name, engine = get_ocr_engine()
     np_img = np.array(pil_img)
     lines = []
@@ -75,9 +76,9 @@ def run_ocr(pil_img: Image.Image):
 
     elif engine_name == "easyocr" and engine:
         try:
-            # Optimize image resolution for fast CPU inference (960px max dimension)
+            # Optimize image resolution for fast CPU inference (800px max dimension for low RAM)
             h, w = np_img.shape[:2]
-            max_dim = 960
+            max_dim = 800
             if max(h, w) > max_dim:
                 scale = max_dim / float(max(h, w))
                 new_w, new_h = int(w * scale), int(h * scale)
@@ -88,7 +89,7 @@ def run_ocr(pil_img: Image.Image):
                 ocr_input = np_img
                 inv_scale = 1.0
 
-            res = engine.readtext(ocr_input, batch_size=4)
+            res = engine.readtext(ocr_input, batch_size=1, canvas_size=800, mag_ratio=1.0)
             for bbox, text, conf in res:
                 # Scale bounding box back to original coordinates
                 if inv_scale != 1.0:
@@ -98,6 +99,8 @@ def run_ocr(pil_img: Image.Image):
                 lines.append({"text": text.strip(), "confidence": round(float(conf) * 100, 1), "bbox": scaled_bbox})
         except Exception as e:
             print(f"[OCR] EasyOCR execution error: {e}")
+        finally:
+            gc.collect()
 
     return engine_name or "basic_heuristic", lines
 
